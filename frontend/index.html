@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Angel AI Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&family=Montserrat:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="main.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Angel AI</h2>
+            </div>
+            <div class="sidebar-section">
+                <h3>Status</h3>
+                <div style="display: flex; align-items: center;">
+                    <div class="status-indicator"></div>
+                    <span>Online</span>
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <h3>Settings</h3>
+                <!-- Removed broken comment block -->
+                <div style="margin-top: 15px;">
+                    <label>Response Length</label>
+                    <input type="range" min="50" max="500" value="300" class="slider">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8em;">
+                        <span>Brief</span>
+                        <span>Detailed</span>
+                    </div>
+                </div>
+            </div>
+            <div class="sidebar-section" style="margin-top: auto;">
+                <p style="text-align: center; font-size: 0.8em; color: #64ffda;">Angel AI v1.0</p>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="header">
+                <h1>Angel AI Assistant</h1>
+                <p>Your intelligent companion</p>
+            </div>
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('chat')">💬 Chat</div>
+                <div class="tab" onclick="switchTab('analysis')">📝 Analysis</div>
+                <div class="tab" onclick="switchTab('about')">ℹ️ About</div>
+            </div>
+            <div class="tab-content active" id="chat">
+                <div class="chat-container">
+                    <div class="chat-messages">
+                        <div class="message assistant-message">
+                            <div>Hello! I'm Angel AI. How can I help you today?</div>
+                            <div class="message-time">12:00</div>
+                        </div>
+                    </div>
+                    <div class="chat-input">
+                        <input type="text" placeholder="Type your message..." />
+                        <button class="send-button">Send</button>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-content" id="analysis">
+                <div>
+                    <h2>Text Analysis</h2>
+                    <div class="radio-group">
+                        <label>
+                            <input type="radio" name="analysisType" value="summarization" checked>
+                            Text Summarization
+                        </label>
+                    </div>
+                    <textarea class="text-area" placeholder="Enter text to analyze..."></textarea>
+                    <button class="analyze-button">Analyze</button>
+                    <div class="results-container" style="display: none;">
+                        <h3>Results:</h3>
+                        <div style="margin: 15px 0;">Results will appear here...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-content" id="about">
+                <div class="about-content">
+                    <h2>About Angel AI</h2>
+                    <p style="margin-bottom: 15px;">
+                        Angel AI is an intelligent assistant powered by advanced language processing.
+                        It can answer questions, summarize text, and help you with various tasks.
+                    </p>
+                    <h3>Features:</h3>
+                    <ul style="list-style-type: none; margin: 10px 0;">
+                        <li>- Dynamic conversations</li>
+                        <li>- Text summarization</li>
+                        <li>- Knowledge retrieval</li>
+                    </ul>
+                    <h3>Technical Details:</h3>
+                    <p>
+                        Built on Cohere's language models with a simple, intuitive interface
+                        for seamless human-AI interaction.
+                    </p>
+                </div>
+            </div>
+        </main>
+    </div>
+  <script>
+    const chatInput = document.querySelector('.chat-input input'); // Fixed selector
+    const sendButton = document.querySelector('.send-button');
+    const chatMessages = document.querySelector('.chat-messages');
+    const analyzeButton = document.querySelector('.analyze-button');
+    const textArea = document.querySelector('.text-area');
+    const resultsContainer = document.querySelector('.results-container');
+
+    // Function to send a chat message to the backend
+    sendButton.addEventListener('click', async () => {
+        const message = chatInput.value.trim();
+        if (!message) return;
+
+        // Display user message
+        const userMessage = document.createElement('div');
+        userMessage.className = 'message user-message';
+        userMessage.innerHTML = `<div>${message}</div><div class="message-time">${new Date().toLocaleTimeString()}</div>`;
+        chatMessages.appendChild(userMessage);
+
+        // Send message to backend using fetch
+        try {
+            const response = await fetch('http://127.0.0.1:5000/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            // Display assistant response
+            const assistantMessage = document.createElement('div');
+            assistantMessage.className = 'message assistant-message';
+            assistantMessage.innerHTML = `<div>${data.response || 'Error: No response'}</div><div class="message-time">${new Date().toLocaleTimeString()}</div>`;
+            chatMessages.appendChild(assistantMessage);
+        } catch (error) {
+            console.error('Error:', error);
+        }
+
+        chatInput.value = '';
+    });
+
+    // Function to analyze text (summarization)
+    analyzeButton.addEventListener('click', async () => {
+        const text = textArea.value.trim();
+        if (!text) return;
+
+        // Send text to backend for summarization using fetch
+        try {
+            const response = await fetch('http://127.0.0.1:5000/api/summarize', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            // Display results
+            resultsContainer.style.display = 'block';
+            resultsContainer.innerHTML = `<h3>Results:</h3><div>${data.summary || 'Error: No summary'}</div>`;
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    });
+</script>
+<script>
+    // Function to switch between tabs
+    function switchTab(tabId) {
+        // Remove the "active" class from all tabs
+        document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+        // Add the "active" class to the clicked tab and its corresponding content
+        document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
+        document.getElementById(tabId).classList.add('active');
+    }
+</script>
+</body>
+</html>
